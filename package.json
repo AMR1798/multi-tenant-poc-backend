@@ -5,10 +5,10 @@
   "main": "src/index.ts",
   "repository": "https://github.com/antonio-lazaro/prisma-express-typescript-boilerplate.git",
   "scripts": {
-    "start": "yarn build && pm2 start ecosystem.config.json --no-daemon",
+  "start": "pm2 start ecosystem.config.json --no-daemon",
     "dev": "cross-env NODE_ENV=development nodemon src/index.ts",
-    "test": "docker-compose -f docker-compose.only-db-test.yml up -d && yarn db:push && jest -i --colors --verbose --detectOpenHandles && docker-compose -f docker-compose.only-db-test.yml down",
-    "test:watch": "docker-compose -f docker-compose.only-db-test.yml up -d && yarn db:push && jest -i --watchAll && docker-compose -f docker-compose.only-db-test.yml down",
+    "test": "docker-compose -f docker-compose.only-db-test.yml up -d && npm db:push && jest -i --colors --verbose --detectOpenHandles && docker-compose -f docker-compose.only-db-test.yml down",
+    "test:watch": "docker-compose -f docker-compose.only-db-test.yml up -d && npm db:push && jest -i --watchAll && docker-compose -f docker-compose.only-db-test.yml down",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --check **/*.ts",
@@ -73,7 +73,7 @@
     "node-mocks-http": "^1.12.1",
     "nodemon": "^2.0.20",
     "prettier": "^2.8.1",
-    "prisma": "^4.10.1",
+    "prisma": "^5.7.1",
     "supertest": "^6.3.3",
     "swagger-jsdoc": "^6.2.5",
     "swagger-ui-express": "^4.6.0",
@@ -82,7 +82,7 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
-    "@prisma/client": "^4.7.1",
+    "@prisma/client": "^5.7.1",
     "@types/bcryptjs": "^2.4.2",
     "@types/nodemailer": "^6.4.7",
     "bcryptjs": "^2.4.3",

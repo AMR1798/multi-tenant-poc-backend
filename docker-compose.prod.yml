@@ -1,7 +1,12 @@
 version: '3.8'
 
 services:
-  node-app:
-    container_name: node-app-prod
-    command: yarn start
-
+  node-app-prod:
+    build:
+      context: .
+      target: production
+    image: multi-tenant-poc-backend-prod
+    env_file:
+      - .env.production
+    ports:
+      - '3000:3000'

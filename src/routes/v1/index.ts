@@ -1,7 +1,7 @@
 import express from 'express';
 import authRoute from './auth.route';
 import userRoute from './user.route';
-import docsRoute from './docs.route';
+// import docsRoute from './docs.route';
 import indexRoute from './index.route';
 import config from '../../config/config';
 import tenantRoute from './tenant.route';
@@ -47,13 +47,13 @@ const adminRoutes = [
   }
 ];
 
-const devRoutes = [
-  // routes available only in development mode
-  {
-    path: '/docs',
-    route: docsRoute
-  }
-];
+// const devRoutes = [
+//   // routes available only in development mode
+//   {
+//     path: '/docs',
+//     route: docsRoute
+//   }
+// ];
 
 apiRoutes.forEach((route) => {
   apiRouter.use(route.path, route.route);
@@ -63,12 +63,12 @@ adminRoutes.forEach((route) => {
   adminApiRouter.use(route.path, route.route);
 });
 
-/* istanbul ignore next */
-if (config.env === 'development') {
-  devRoutes.forEach((route) => {
-    docsRouter.use(route.path, route.route);
-  });
-}
+// /* istanbul ignore next */
+// if (config.env === 'development') {
+//   devRoutes.forEach((route) => {
+//     docsRouter.use(route.path, route.route);
+//   });
+// }
 
 router.use('/admin', adminApiRouter);
 router.use('/api', apiRouter);

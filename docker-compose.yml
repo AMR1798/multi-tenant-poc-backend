@@ -2,36 +2,36 @@ version: '3.8'
 
 services:
   node-app:
-    build: .
-    image: node-app
-    environment:
-      - MONGODB_URL=mongodb://mongodb:27017/node-boilerplate
+    build:
+      context: .
+      target: development  # Specify the build target (development stage)
+    image: multi-tenant-poc-backend
+    env_file:
+      - .env
     ports:
       - '3000:3000'
-    depends_on:
-      - postgresdb
     volumes:
       - .:/usr/src/node-app
-    networks:
-      - node-network
+    # networks:
+    #   - node-network
 
-  postgresdb:
-    image: postgres
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=secret
-    ports:
-      - '5432:5432'
-    volumes: 
-      - dbdata:/var/lib/postgresql/data
-    networks:
-      - node-network
+  # postgresdb:
+  #   image: postgres
+  #   restart: always
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=secret
+  #   ports:
+  #     - '5432:5432'
+  #   volumes: 
+  #     - dbdata:/var/lib/postgresql/data
+  #   networks:
+  #     - node-network
 
-volumes:
-  dbdata:
-    driver: local
+# volumes:
+#   dbdata:
+#     driver: local
 
-networks:
-  node-network:
-    driver: bridge
+# networks:
+#   node-network:
+#     driver: bridge

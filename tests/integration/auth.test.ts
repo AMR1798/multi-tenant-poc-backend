@@ -192,7 +192,14 @@ describe('Auth routes', () => {
       const dbUserOne = (await prisma.user.findUnique({ where: { email: userOne.email } })) as User;
       const expires = moment().add(config.jwt.refreshExpirationDays, 'days');
       const refreshToken = tokenService.generateToken(dbUserOne.id, expires, TokenType.REFRESH);
-      await tokenService.saveToken(refreshToken, dbUserOne.id, expires, TokenType.REFRESH, true);
+      await tokenService.saveToken(
+        refreshToken,
+        dbUserOne.id,
+        expires,
+        TokenType.REFRESH,
+        undefined,
+        true
+      );
 
       await request(app)
         .post('/v1/auth/logout')
@@ -276,7 +283,14 @@ describe('Auth routes', () => {
       const dbUserOne = (await prisma.user.findUnique({ where: { email: userOne.email } })) as User;
       const expires = moment().add(config.jwt.refreshExpirationDays, 'days');
       const refreshToken = tokenService.generateToken(dbUserOne.id, expires, TokenType.REFRESH);
-      await tokenService.saveToken(refreshToken, dbUserOne.id, expires, TokenType.REFRESH, true);
+      await tokenService.saveToken(
+        refreshToken,
+        dbUserOne.id,
+        expires,
+        TokenType.REFRESH,
+        undefined,
+        true
+      );
 
       await request(app)
         .post('/v1/auth/refresh-tokens')
@@ -408,6 +422,7 @@ describe('Auth routes', () => {
         dbUserOne.id,
         expires,
         TokenType.RESET_PASSWORD,
+        undefined,
         true
       );
 
@@ -596,6 +611,7 @@ describe('Auth routes', () => {
         dbUserOne.id,
         expires,
         TokenType.VERIFY_EMAIL,
+        undefined,
         true
       );
 
@@ -791,7 +807,7 @@ describe('Auth middleware', () => {
     });
     const next = jest.fn();
 
-    await auth('anyRight')(req, httpMocks.createResponse(), next);
+    await auth(false, 'anyRight')(req, httpMocks.createResponse(), next);
 
     expect(next).toHaveBeenCalledWith(expect.any(ApiError));
     expect(next).toHaveBeenCalledWith(
@@ -813,7 +829,7 @@ describe('Auth middleware', () => {
     });
     const next = jest.fn();
 
-    await auth('anyRight')(req, httpMocks.createResponse(), next);
+    await auth(false, 'anyRight')(req, httpMocks.createResponse(), next);
 
     expect(next).toHaveBeenCalledWith();
   });
@@ -832,7 +848,11 @@ describe('Auth middleware', () => {
     });
     const next = jest.fn();
 
-    await auth(...(roleRights.get(Role.ADMIN) as string[]))(req, httpMocks.createResponse(), next);
+    await auth(false, ...(roleRights.get(Role.ADMIN) as string[]))(
+      req,
+      httpMocks.createResponse(),
+      next
+    );
 
     expect(next).toHaveBeenCalledWith();
   });
