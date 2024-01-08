@@ -2,7 +2,7 @@ import httpStatus from 'http-status';
 import catchAsync from '../utils/catchAsync';
 import { authService, userService, tokenService, emailService, tenantService } from '../services';
 import exclude from '../utils/exclude';
-import { User } from '@prisma/client';
+import { TokenType, User } from '@prisma/client';
 import ApiError from '../utils/ApiError';
 
 const register = catchAsync(async (req, res) => {
@@ -74,8 +74,17 @@ const resetPassword = catchAsync(async (req, res) => {
 
 const sendVerificationEmail = catchAsync(async (req, res) => {
   const user = req.user as User;
-  const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-  await emailService.sendVerificationEmail(user.email, verifyEmailToken, res.locals.TENANT?.slug);
+  // check existing verify token
+  const existingToken = await tokenService.getCurrentTokenByUserAndTokenType(
+    user,
+    TokenType.VERIFY_EMAIL
+  );
+
+  if (!existingToken) {
+    const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
+    await emailService.sendVerificationEmail(user.email, verifyEmailToken, res.locals.TENANT?.slug);
+  }
+
   res.status(httpStatus.NO_CONTENT).send();
 });
 

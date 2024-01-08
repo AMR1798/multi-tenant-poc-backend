@@ -145,11 +145,33 @@ const generateVerifyEmailToken = async (user: { id: number }): Promise<string> =
   return verifyEmailToken;
 };
 
+/**
+ * Get token that has not expires
+ * @param {User} user
+ * * @param {String} token
+ * @returns {Promise<Token>}
+ */
+const getCurrentTokenByUserAndTokenType = async (
+  user: { id: number },
+  tokenType: TokenType
+): Promise<Token | null> => {
+  return await prisma.token.findFirst({
+    where: {
+      userId: user.id,
+      expires: {
+        gt: new Date()
+      },
+      type: tokenType
+    }
+  });
+};
+
 export default {
   generateToken,
   saveToken,
   verifyToken,
   generateAuthTokens,
   generateResetPasswordToken,
-  generateVerifyEmailToken
+  generateVerifyEmailToken,
+  getCurrentTokenByUserAndTokenType
 };
