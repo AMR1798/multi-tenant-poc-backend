@@ -20,8 +20,13 @@ const login = catchAsync(async (req, res) => {
   const user = await authService.loginUserWithEmailAndPassword(email, password);
   // check if user are part of tenant
   if (tenant) {
-    if (!(await tenantService.isPartOfTenant(tenant.id, user.id)))
+    if (!(await tenantService.isPartOfTenant(tenant.id, user.id))) {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'User is not part of tenant');
+    }
+  } else {
+    if (user.deletedAt) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'User disabled');
+    }
   }
   const tokens = await tokenService.generateAuthTokens(user, tenant);
   res.send({ user: exclude(user, ['createdAt', 'updatedAt']), tokens });
@@ -54,7 +59,11 @@ const refreshTokens = catchAsync(async (req, res) => {
 
 const forgotPassword = catchAsync(async (req, res) => {
   const resetPasswordToken = await tokenService.generateResetPasswordToken(req.body.email);
-  await emailService.sendResetPasswordEmail(req.body.email, resetPasswordToken);
+  await emailService.sendResetPasswordEmail(
+    req.body.email,
+    resetPasswordToken,
+    res.locals.TENANT?.slug
+  );
   res.status(httpStatus.NO_CONTENT).send();
 });
 
@@ -66,12 +75,12 @@ const resetPassword = catchAsync(async (req, res) => {
 const sendVerificationEmail = catchAsync(async (req, res) => {
   const user = req.user as User;
   const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-  await emailService.sendVerificationEmail(user.email, verifyEmailToken);
+  await emailService.sendVerificationEmail(user.email, verifyEmailToken, res.locals.TENANT?.slug);
   res.status(httpStatus.NO_CONTENT).send();
 });
 
 const verifyEmail = catchAsync(async (req, res) => {
-  await authService.verifyEmail(req.query.token as string);
+  await authService.verifyEmail(req.body.token as string);
   res.status(httpStatus.NO_CONTENT).send();
 });
 

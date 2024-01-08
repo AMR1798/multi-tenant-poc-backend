@@ -2,7 +2,8 @@ import httpStatus from 'http-status';
 import pick from '../utils/pick';
 import ApiError from '../utils/ApiError';
 import catchAsync from '../utils/catchAsync';
-import { userService } from '../services';
+import { tenantService, userService } from '../services';
+import { AuthedUser } from '../types/authed-user';
 
 const createUser = catchAsync(async (req, res) => {
   const { email, password, name, role } = req.body;
@@ -11,9 +12,10 @@ const createUser = catchAsync(async (req, res) => {
 });
 
 const getUsers = catchAsync(async (req, res) => {
+  const user = req.user as AuthedUser;
   const filter = pick(req.query, ['name', 'role']);
-  const options = pick(req.query, ['sortBy', 'limit', 'page']);
-  const result = await userService.queryUsers(filter, options);
+  const options = pick(req.query, ['sort', 'order', 'limit', 'page']);
+  const result = await userService.queryUsers(user, filter, options);
   res.send(result);
 });
 
@@ -35,10 +37,36 @@ const deleteUser = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const disableUser = catchAsync(async (req, res) => {
+  const user = req.user as AuthedUser;
+
+  if (!user.tenant) {
+    await userService.disableUserById(req.params.userId);
+  } else {
+    await tenantService.disableUser(Number(req.params.userId), user.tenant.id);
+  }
+
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+const enableUser = catchAsync(async (req, res) => {
+  const user = req.user as AuthedUser;
+
+  if (!user.tenant) {
+    await userService.enableUserById(req.params.userId);
+  } else {
+    await tenantService.enableUser(Number(req.params.userId), user.tenant.id);
+  }
+
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
 export default {
   createUser,
   getUsers,
   getUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  disableUser,
+  enableUser
 };

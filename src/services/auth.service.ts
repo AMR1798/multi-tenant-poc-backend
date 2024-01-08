@@ -7,6 +7,7 @@ import prisma from '../client';
 import { encryptPassword, isPasswordMatch } from '../utils/encryption';
 import { AuthTokensResponse } from '../types/response';
 import exclude from '../utils/exclude';
+import tenantService from './tenant.service';
 
 /**
  * Login with username and password
@@ -26,7 +27,8 @@ const loginUserWithEmailAndPassword = async (
     'role',
     'isEmailVerified',
     'createdAt',
-    'updatedAt'
+    'updatedAt',
+    'deletedAt'
   ]);
   if (!user || !(await isPasswordMatch(password, user.password as string))) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password');
@@ -67,6 +69,12 @@ const refreshAuth = async (refreshToken: string, tenant?: Tenant): Promise<AuthT
     );
     const { userId } = refreshTokenData;
     await prisma.token.delete({ where: { id: refreshTokenData.id } });
+    if (tenant) {
+      // do checking if the user is disabled from the tenant
+      if (!(await tenantService.isPartOfTenant(tenant.id, userId))) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, 'User is disabled');
+      }
+    }
     return tokenService.generateAuthTokens({ id: userId }, tenant);
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');

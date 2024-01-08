@@ -5,8 +5,9 @@ import docsRoute from './docs.route';
 import indexRoute from './index.route';
 import config from '../../config/config';
 import tenantRoute from './tenant.route';
-import admin from '../../middlewares/admin';
 import profileRoute from './profile.route';
+import resourceRoute from './resource.route';
+import metaRoute from './meta.route';
 
 const router = express.Router();
 const apiRouter = express.Router();
@@ -29,6 +30,14 @@ const apiRoutes = [
   {
     path: '/profile',
     route: profileRoute
+  },
+  {
+    path: '/resources',
+    route: resourceRoute
+  },
+  {
+    path: '/meta',
+    route: metaRoute
   }
 ];
 const adminRoutes = [

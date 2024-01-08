@@ -15,7 +15,8 @@ const getUsers = {
   query: Joi.object().keys({
     name: Joi.string(),
     role: Joi.string(),
-    sortBy: Joi.string(),
+    sort: Joi.string(),
+    order: Joi.string(),
     limit: Joi.number().integer(),
     page: Joi.number().integer()
   })
@@ -46,10 +47,17 @@ const deleteUser = {
   })
 };
 
+const disableUser = {
+  params: Joi.object().keys({
+    userId: Joi.number().integer()
+  })
+};
+
 export default {
   createUser,
   getUsers,
   getUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  disableUser
 };

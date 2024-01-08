@@ -4,6 +4,11 @@ import prisma from '../client';
 import ApiError from '../utils/ApiError';
 import { encryptPassword } from '../utils/encryption';
 import tenantService from './tenant.service';
+import { AuthedUser } from '../types/authed-user';
+import { PaginatedData } from '../types/paginated-data';
+import { calcNumPages } from '../utils/pagination';
+import exclude from '../utils/exclude';
+import pick from '../utils/pick';
 
 /**
  * Create a user
@@ -17,7 +22,6 @@ const createUser = async (
   tenant?: Tenant,
   role: Role = Role.USER
 ): Promise<User> => {
-  console.log(tenant);
   const existing = await getUserByEmail(email);
   if (existing && tenant) {
     if (await tenantService.isPartOfTenant(tenant.id, existing.id)) {
@@ -41,7 +45,6 @@ const createUser = async (
       role
     }
   });
-  console.log(user.id);
   if (tenant) {
     await tenantService.addUserToTenant(tenant.id, user.id);
   }
@@ -59,36 +62,96 @@ const createUser = async (
  * @returns {Promise<QueryResult>}
  */
 const queryUsers = async <Key extends keyof User>(
-  filter: object,
+  user: AuthedUser,
+  filter: Record<string, any>,
   options: {
     limit?: number;
     page?: number;
-    sortBy?: string;
-    sortType?: 'asc' | 'desc';
+    sort?: string;
+    order?: 'asc' | 'desc';
   },
   keys: Key[] = [
     'id',
     'email',
     'name',
-    'password',
     'role',
     'isEmailVerified',
     'createdAt',
-    'updatedAt'
+    'updatedAt',
+    'deletedAt'
   ] as Key[]
-): Promise<Pick<User, Key>[]> => {
+): Promise<PaginatedData<Pick<User, Key>>> => {
+  const tenant = user.tenant;
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
-  const sortBy = options.sortBy;
-  const sortType = options.sortType ?? 'desc';
-  const users = await prisma.user.findMany({
-    where: filter,
-    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
-    skip: page * limit,
-    take: limit,
-    orderBy: sortBy ? { [sortBy]: sortType } : undefined
+  const sort = options.sort;
+  const order = options.order ?? 'desc';
+  const skip = (page - 1) * limit;
+  const select = {
+    ...keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+    ...(tenant
+      ? {
+          TenantUser: {
+            select: {
+              role: true,
+              deletedAt: true
+            },
+            where: {
+              tenantId: tenant.id // Filter TenantUser records by tenantId,
+            }
+          }
+        }
+      : {})
+  } as Prisma.UserSelect;
+  // for role filter handling
+  const filterPick = pick(filter, ['role']);
+  const where = {
+    ...(tenant
+      ? {
+          ...exclude(filter, ['role']),
+          TenantUser: {
+            some: {
+              tenantId: tenant.id,
+              ...filterPick
+            }
+          }
+        }
+      : { ...filter })
+  };
+  const result = await prisma.$transaction(async (_prisma) => {
+    const count = await _prisma.user.count({
+      where
+    });
+
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        ...select
+      },
+      skip,
+      take: limit,
+      orderBy: sort ? { [sort]: order } : undefined
+    });
+
+    return {
+      total: count,
+      data: users.map((u) => {
+        return exclude(
+          {
+            ...u,
+            role: u.TenantUser?.length ? u.TenantUser[0].role : u.role,
+            deletedAt: u.TenantUser?.length ? u.TenantUser[0].deletedAt : u.deletedAt
+          },
+          ['TenantUser']
+        ) as Pick<User, Key>;
+      }),
+      page,
+      nextPage: page + 1,
+      pages: calcNumPages(count, limit),
+      limit
+    } as PaginatedData<Pick<User, Key>>;
   });
-  return users as Pick<User, Key>[];
+  return result;
 };
 
 /**
@@ -181,11 +244,43 @@ const deleteUserById = async (userId: number): Promise<User> => {
   return user;
 };
 
+const disableUserById = async (id: number): Promise<void> => {
+  try {
+    await prisma.user.updateMany({
+      where: {
+        id
+      },
+      data: {
+        deletedAt: new Date()
+      }
+    });
+  } catch (e) {
+    throw new ApiError(500, 'failed to disable user');
+  }
+};
+
+const enableUserById = async (id: number): Promise<void> => {
+  try {
+    await prisma.user.updateMany({
+      where: {
+        id
+      },
+      data: {
+        deletedAt: null
+      }
+    });
+  } catch (e) {
+    throw new ApiError(500, 'failed to enable user');
+  }
+};
+
 export default {
   createUser,
   queryUsers,
   getUserById,
   getUserByEmail,
   updateUserById,
-  deleteUserById
+  deleteUserById,
+  disableUserById,
+  enableUserById
 };

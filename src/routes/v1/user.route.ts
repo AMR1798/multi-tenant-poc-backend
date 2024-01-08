@@ -9,8 +9,15 @@ const router = express.Router();
 
 router
   .route('/')
-  .post(admin(), validate(userValidation.createUser), userController.createUser)
-  .get(admin(), validate(userValidation.getUsers), userController.getUsers);
+  .post(auth(), admin(), validate(userValidation.createUser), userController.createUser)
+  .get(auth(), admin(), validate(userValidation.getUsers), userController.getUsers);
+
+router
+  .route('/disable/:userId')
+  .post(auth(), admin(), validate(userValidation.disableUser), userController.disableUser);
+router
+  .route('/enable/:userId')
+  .post(auth(), admin(), validate(userValidation.disableUser), userController.enableUser);
 
 router
   .route('/:userId')

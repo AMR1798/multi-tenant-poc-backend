@@ -52,6 +52,7 @@ model User {
   TenantUser      TenantUser[]
   Tenant          Tenant[]
   Resource        Resource[]
+  deletedAt       DateTime?
 }
 
 model Token {
@@ -71,27 +72,45 @@ model Resource {
   id        Int          @id @default(autoincrement())
   user      User         @relation(fields: [createdBy], references: [id])
   createdBy Int
-  tenant    Tenant       @relation(fields: [tenantId], references: [id])
-  tenantId  Int
+  tenant    Tenant?      @relation(fields: [tenantId], references: [id])
+  tenantId  Int?
+  title     String
   type      ResourceType @default(NOTE)
+  access    AccessType   @default(PRIVATE)
   pinned    Boolean      @default(false)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
-  Note      Note?
+  deletedAt DateTime?
+  note      Note?
+
+  @@index(tenantId)
+  @@index(type)
+  @@index(deletedAt)
+  @@index(createdAt)
+  @@index(updatedAt)
+  @@index(createdBy)
+  @@index(access)
 }
 
 model Note {
-  resource   Resource @relation(fields: [resourceId], references: [id])
-  resourceId Int      @unique
+  resource   Resource    @relation(fields: [resourceId], references: [id])
+  resourceId Int         @unique
   content    String
+  delta      Json?
+  version    NoteVersion @default(QUILL)
+}
+
+enum NoteVersion {
+  QUILL
 }
 
 enum Role {
   USER
   ADMIN
+  SUPERADMIN
 }
 
-enum ShareType {
+enum AccessType {
   PUBLIC
   TENANT
   PRIVATE

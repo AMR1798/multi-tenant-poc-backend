@@ -13,7 +13,6 @@ const createTenant = catchAsync(async (req, res) => {
 
 const checkSlug = catchAsync(async (req, res) => {
   const slug = req.params.slug;
-  console.log(slug);
   const result = await tenantService.getEnabledTenantBySlug(slug);
   res.send({
     available: result ? false : true

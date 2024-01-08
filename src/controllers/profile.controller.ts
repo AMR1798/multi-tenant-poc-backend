@@ -7,7 +7,6 @@ import { AuthedUser } from '../types/authed-user';
 const getUserTenantList = catchAsync(async (req, res) => {
   let { page, limit } = req.query;
   const { sort, order } = req.query;
-  console.log(page, limit, sort, order);
   const user = req.user as AuthedUser;
   if (!page) {
     page = '1';

@@ -1,3 +1,3 @@
-import { User } from '@prisma/client';
+import { Tenant, User } from '@prisma/client';
 
-export type AuthedUser = User & { tenant?: string };
+export type AuthedUser = User & { tenant?: Tenant };

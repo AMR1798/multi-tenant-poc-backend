@@ -5,6 +5,7 @@ import ApiError from '../utils/ApiError';
 import { PaginatedData } from '../types/paginated-data';
 import { tenant } from '../middlewares/tenant';
 import exclude from '../utils/exclude';
+import { calcNumPages } from '../utils/pagination';
 
 /**
  * Get enabled tenant by slug
@@ -38,7 +39,7 @@ const createTenant = async (name: string, slug: string, user: User): Promise<Ten
   });
 
   // insert user as part of tenant
-  addUserToTenant(tenant.id, user.id);
+  addUserToTenant(tenant.id, user.id, true);
   return tenant;
 };
 
@@ -48,12 +49,13 @@ const createTenant = async (name: string, slug: string, user: User): Promise<Ten
  * @param userId number
  * @returns {Promise<void>}
  */
-const addUserToTenant = async (tenantId: number, userId: number): Promise<void> => {
+const addUserToTenant = async (tenantId: number, userId: number, admin = false): Promise<void> => {
   // insert user as part of tenant
   await prisma.tenantUser.create({
     data: {
       tenantId,
-      userId
+      userId,
+      role: admin ? Role.ADMIN : Role.USER
     }
   });
 };
@@ -68,9 +70,11 @@ const isPartOfTenant = async (tenantId: number, userId: number): Promise<boolean
   const res = await prisma.tenantUser.findFirst({
     where: {
       tenantId,
-      userId
+      userId,
+      deletedAt: null
     }
   });
+  console.log(res);
   if (!res) {
     return false;
   }
@@ -146,8 +150,41 @@ const listUserTenantPaginated = async (
     data: mapped,
     page,
     nextPage: page + 1,
+    pages: calcNumPages(res[0], take),
     limit: take
   };
+};
+
+const disableUser = async (userId: number, tenantId: number): Promise<void> => {
+  try {
+    await prisma.tenantUser.updateMany({
+      where: {
+        userId,
+        tenantId
+      },
+      data: {
+        deletedAt: new Date()
+      }
+    });
+  } catch (e) {
+    throw new ApiError(500, 'failed to disable user');
+  }
+};
+
+const enableUser = async (userId: number, tenantId: number): Promise<void> => {
+  try {
+    await prisma.tenantUser.updateMany({
+      where: {
+        userId,
+        tenantId
+      },
+      data: {
+        deletedAt: null
+      }
+    });
+  } catch (e) {
+    throw new ApiError(500, 'failed to disable user');
+  }
 };
 
 export default {
@@ -156,5 +193,7 @@ export default {
   isPartOfTenant,
   addUserToTenant,
   getUserTenantRole,
-  listUserTenantPaginated
+  listUserTenantPaginated,
+  disableUser,
+  enableUser
 };
