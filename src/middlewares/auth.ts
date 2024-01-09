@@ -45,7 +45,7 @@ const verifyCallback =
 const auth =
   (allowPublic = false, ...requiredRights: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
-    if (allowPublic && !res.locals.TENANT) {
+    if (allowPublic && !res.locals.TENANT && !req.headers.authorization) {
       // tenant request should never be made public
       // create fake public user
       req.user = {

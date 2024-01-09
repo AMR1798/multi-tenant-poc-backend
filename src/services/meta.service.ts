@@ -29,6 +29,10 @@ const listAccessPaginated = async (
     filteredAccess = access.filter((e) => {
       return e.id !== AccessType.TENANT;
     });
+  } else if (!isAdmin(user) && isMain(user)) {
+    filteredAccess = access.filter((e) => {
+      return e.id === AccessType.PRIVATE;
+    });
   } else {
     filteredAccess = access.filter((e) => {
       return e.id !== AccessType.PUBLIC;
