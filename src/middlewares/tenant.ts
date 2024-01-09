@@ -7,6 +7,7 @@ import passport from 'passport';
 import { JwtPayload } from '../types/jwt-payload';
 import { AuthedUser } from '../types/authed-user';
 import UnauthedError from '../utils/errors/UnauthedError';
+import config from '../config/config';
 
 const verifyCallback =
   (req: any, res: any, resolve: (value?: unknown) => void, reject: (reason?: unknown) => void) =>
@@ -38,7 +39,7 @@ const tenant = async (req: Request, res: Response, next: NextFunction): Promise<
   return new Promise<void>(async (resolve, reject) => {
     res.locals.TENANT = undefined;
     const s = req.subdomains.pop();
-    if (!s) {
+    if (!s || s === config.host.subdomain) {
       resolve();
       return;
     }
